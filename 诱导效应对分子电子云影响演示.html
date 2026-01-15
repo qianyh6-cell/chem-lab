@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>诱导效应与酸性强度 - 交互式教学演示</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0c;
+            --panel-bg: rgba(30, 30, 35, 0.9);
+            --accent-cyan: #00f2ff;
+            --accent-red: #ff4d4d;
+        }
+        body { margin: 0; overflow: hidden; font-family: 'PingFang SC', sans-serif; background: var(--bg-color); color: white; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        
+        /* UI 面板 */
+        .overlay {
+            position: absolute;
+            padding: 25px;
+            pointer-events: none;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+        }
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 20px;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .left-panel { width: 350px; }
+        .right-panel { width: 300px; }
+
+        h1 { font-size: 1.4rem; color: var(--accent-cyan); margin-top: 0; }
+        .molecule-selector { display: flex; gap: 10px; margin-bottom: 20px; }
+        button {
+            flex: 1;
+            padding: 10px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: 0.3s;
+        }
+        button.active { background: var(--accent-cyan); color: #000; font-weight: bold; }
+        
+        .data-card {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .pka-value { font-size: 2rem; font-weight: bold; color: var(--accent-red); text-align: center; }
+        
+        .effect-description { font-size: 0.9rem; line-height: 1.6; color: #ccc; }
+        .highlight { color: var(--accent-cyan); font-weight: bold; }
+
+        /* 底部图例 */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 30px;
+            background: var(--panel-bg);
+            padding: 10px 30px;
+            border-radius: 50px;
+        }
+        .legend-item { display: flex; align-items: center; font-size: 0.8rem; }
+        .color-box { width: 15px; height: 15px; border-radius: 3px; margin-right: 8px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div class="overlay">
+        <div class="panel left-panel">
+            <h1>酸性强度对比演示</h1>
+            <p class="effect-description">通过观察电子云的偏移，理解为什么取代基的电负性会影响 $O-H$ 键的极性。</p>
+            
+            <div class="molecule-selector">
+                <button id="btn-acetic" class="active" onclick="switchMolecule('acetic')">乙酸 (Acetic Acid)</button>
+                <button id="btn-tfa" onclick="switchMolecule('tfa')">三氟乙酸 (TFA)</button>
+            </div>
+
+            <div class="data-card">
+                <div style="text-align: center; font-size: 0.8rem;">实验测得 $pK_a$</div>
+                <div id="pka-display" class="pka-value">4.76</div>
+                <p id="info-text" class="effect-description">甲基具有微弱的给电子效应，电子云分布相对均匀。</p>
+            </div>
+        </div>
+
+        <div class="panel right-panel">
+            <h2 style="font-size: 1rem;">诱导效应系列例子</h2>
+            <div id="series-list" style="font-size: 0.85rem;">
+                <div style="margin-bottom: 10px;">• <b>氯代乙酸系列：</b><br>
+                    $ClCH_2COOH$ ($pK_a$ 2.86)<br>
+                    $Cl_2CHCOOH$ ($pK_a$ 1.29)<br>
+                    $Cl_3CCOOH$ ($pK_a$ 0.65)
+                </div>
+                <div>• <b>距离效应：</b><br>
+                    2-氯丁酸 ($pK_a$ 2.8)<br>
+                    4-氯丁酸 ($pK_a$ 4.5)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="color-box" style="background: #ff4d4d;"></div> 富电子区 (负电)</div>
+        <div class="legend-item"><div class="color-box" style="background: #4d4dff;"></div> 贫电子区 (正电)</div>
+        <div class="legend-item"><div class="color-box" style="background: #00f2ff;"></div> 电子拉拽方向 (诱导效应)</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+<script>
+    // --- 3D 场景初始化 ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 2, 8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+    const pointLight = new THREE.PointLight(0xffffff, 0.5);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+
+    // --- 材质定义 ---
+    const matCarbon = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    const matOxygen = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const matHydrogen = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
+    const matFluorine = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+    const matBond = new THREE.MeshStandardMaterial({ color: 0x888888 });
+
+    // 电子云材质 (半透明)
+    function createCloudMat(color) {
+        return new THREE.MeshPhongMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.DoubleSide
+        });
+    }
+
+    let currentMoleculeGroup = new THREE.Group();
+    scene.add(currentMoleculeGroup);
+
+    // --- 辅助函数：创建原子和键 ---
+    function addAtom(group, pos, mat, size = 0.4) {
+        const geo = new THREE.SphereGeometry(size, 32, 32);
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(pos.x, pos.y, pos.z);
+        group.add(mesh);
+        return mesh;
+    }
+
+    function addBond(group, p1, p2) {
+        const dir = new THREE.Vector3().subVectors(p2, p1);
+        const len = dir.length();
+        const geo = new THREE.CylinderGeometry(0.1, 0.1, len, 12);
+        const mesh = new THREE.Mesh(geo, matBond);
+        mesh.position.copy(p1).add(dir.multiplyScalar(0.5));
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+        group.add(mesh);
+    }
+
+    // 添加诱导效应箭头
+    function addArrow(group, from, to) {
+        const dir = new THREE.Vector3().subVectors(to, from).normalize();
+        const arrow = new THREE.ArrowHelper(dir, from, 1.2, 0x00f2ff, 0.3, 0.2);
+        group.add(arrow);
+    }
+
+    // --- 分子构建逻辑 ---
+    function buildAcetic() {
+        const g = new THREE.Group();
+        // 核心：羧基
+        const c1 = {x: 0.5, y: 0, z: 0};
+        const o1 = {x: 1.2, y: 1, z: 0}; // C=O
+        const o2 = {x: 1.2, y: -1, z: 0}; // C-O
+        const h1 = {x: 2.2, y: -0.8, z: 0}; // O-H
+        
+        // 甲基
+        const c2 = {x: -1, y: 0, z: 0};
+        
+        addAtom(g, c1, matCarbon);
+        addAtom(g, o1, matOxygen);
+        addAtom(g, o2, matOxygen);
+        addAtom(g, h1, matHydrogen, 0.25);
+        addAtom(g, c2, matCarbon);
+        
+        addBond(g, c1, o1);
+        addBond(g, c1, o2);
+        addBond(g, o2, h1);
+        addBond(g, c1, c2);
+
+        // 电子云：乙酸分布较均匀，氧原子稍红
+        const cloud = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), createCloudMat(0xffaaaa));
+        cloud.position.set(1, 0, 0);
+        g.add(cloud);
+
+        return g;
+    }
+
+    function buildTFA() {
+        const g = new THREE.Group();
+        const c1 = {x: 0.5, y: 0, z: 0};
+        const o1 = {x: 1.2, y: 1, z: 0};
+        const o2 = {x: 1.2, y: -1, z: 0};
+        const h1 = {x: 2.2, y: -0.8, z: 0};
+        const c2 = {x: -1, y: 0, z: 0};
+        
+        // 三个氟原子
+        const f1 = {x: -1.8, y: 0.8, z: 0.5};
+        const f2 = {x: -1.8, y: -0.8, z: 0.5};
+        const f3 = {x: -1.8, y: 0, z: -1};
+
+        addAtom(g, c1, matCarbon);
+        addAtom(g, o1, matOxygen);
+        addAtom(g, o2, matOxygen);
+        addAtom(g, h1, matHydrogen, 0.25);
+        addAtom(g, c2, matCarbon);
+        addAtom(g, f1, matFluorine, 0.35);
+        addAtom(g, f2, matFluorine, 0.35);
+        addAtom(g, f3, matFluorine, 0.35);
+
+        addBond(g, c1, o1);
+        addBond(g, c1, o2);
+        addBond(g, o2, h1);
+        addBond(g, c1, c2);
+        addBond(g, c2, f1);
+        addBond(g, c2, f2);
+        addBond(g, c2, f3);
+
+        // 强诱导效应箭头：指向氟原子
+        addArrow(g, new THREE.Vector3(0.5, 0, 0), new THREE.Vector3(-0.8, 0, 0));
+        addArrow(g, new THREE.Vector3(1.2, -1, 0), new THREE.Vector3(0.6, -0.2, 0));
+
+        // 电子云：氟原子区深红(负电)，H原子区深蓝(正电)
+        const cloudF = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), createCloudMat(0xff0000));
+        cloudF.position.set(-1.5, 0, 0);
+        g.add(cloudF);
+
+        const cloudH = new THREE.Mesh(new THREE.SphereGeometry(0.8, 32, 32), createCloudMat(0x0000ff));
+        cloudH.position.set(2.2, -0.8, 0);
+        g.add(cloudH);
+
+        return g;
+    }
+
+    // --- 交互逻辑 ---
+    function switchMolecule(type) {
+        scene.remove(currentMoleculeGroup);
+        document.getElementById('btn-acetic').classList.remove('active');
+        document.getElementById('btn-tfa').classList.remove('active');
+
+        if(type === 'acetic') {
+            currentMoleculeGroup = buildAcetic();
+            document.getElementById('btn-acetic').classList.add('active');
+            document.getElementById('pka-display').innerText = "4.76";
+            document.getElementById('info-text').innerHTML = "甲基具有微弱的<span class='highlight'>给电子效应 (+I)</span>，电子云分布相对均匀，$O-H$ 键极性适中。";
+        } else {
+            currentMoleculeGroup = buildTFA();
+            document.getElementById('btn-tfa').classList.add('active');
+            document.getElementById('pka-display').innerText = "0.23";
+            document.getElementById('info-text').innerHTML = "三个氟原子具有极强的<span class='highlight'>吸电子诱导效应 (-I)</span>。电子云被剧烈拉向氟原子，导致 $O-H$ 键电子密度极低，<span class='highlight'>极性剧增</span>，质子极易解离。";
+        }
+        scene.add(currentMoleculeGroup);
+    }
+
+    // 初始化显示
+    switchMolecule('acetic');
+
+    function animate() {
+        requestAnimationFrame(animate);
+        currentMoleculeGroup.rotation.y += 0.005;
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>

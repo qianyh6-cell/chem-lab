@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 结晶动力学对比 (独立控制版)</title>
+    <style>
+        :root {
+            --bg-color: #0f1014;
+            --panel-bg: #1b1e2b;
+            --accent-slow: #00d2ff; /* 晶体青蓝 */
+            --accent-fast: #ff2a6d; /* 玻璃洋红 */
+            --text-main: #e0e6ed;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+            background: linear-gradient(to bottom, #161922, transparent);
+            z-index: 10;
+        }
+
+        h1 { margin: 0; font-weight: 300; letter-spacing: 2px; }
+        .subtitle { color: #6c757d; font-size: 0.9rem; margin-top: 5px; }
+
+        /* 主容器：左右两栏 */
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            padding: 20px;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        /* 独立的控制面板 */
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 16px;
+            padding: 0; /* 让 Canvas 填满顶部 */
+            width: 500px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #333;
+        }
+
+        /* 3D 画布容器 */
+        .canvas-wrapper {
+            width: 100%;
+            height: 350px;
+            position: relative;
+            background: #000;
+        }
+
+        /* 3D 画布本身 */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 面板下方的控制区 */
+        .ui-area {
+            padding: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .indicator-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px currentColor;}
+
+        /* 状态条 */
+        .status-container {
+            margin-bottom: 20px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .temp-val { font-family: monospace; font-size: 1rem; color: #fff; }
+
+        .progress-track {
+            height: 6px;
+            background: #2a2e3d;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 100%;
+            transition: width 0.1s linear, background-color 0.3s;
+        }
+
+        /* 按钮 */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        button:active { transform: scale(0.96); }
+
+        .btn-action { background: #2c3e50; border: 1px solid #444; }
+        .btn-action:hover { background: #34495e; }
+
+        /* 特定颜色覆盖 */
+        .panel.slow .indicator-dot { color: var(--accent-slow); background: var(--accent-slow); }
+        .panel.slow .btn-primary { background: linear-gradient(135deg, #006080, #009ec3); }
+        .panel.slow .btn-primary:hover { filter: brightness(1.2); }
+        
+        .panel.fast .indicator-dot { color: var(--accent-fast); background: var(--accent-fast); }
+        .panel.fast .btn-primary { background: linear-gradient(135deg, #800030, #c3004a); }
+        .panel.fast .btn-primary:hover { filter: brightness(1.2); }
+
+        .overlay-label {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: #aaa;
+            pointer-events: none;
+        }
+
+    </style>
+    <!-- 引入 Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <header>
+        <h1>晶体生长动力学模拟 (3D)</h1>
+        <div class="subtitle">Separate Control for Crystallization vs. Vitrification</div>
+    </header>
+
+    <div class="main-container">
+
+        <!-- 左侧面板：缓慢结晶 -->
+        <div class="panel slow">
+            <div class="canvas-wrapper" id="container-slow">
+                <div class="overlay-label">鼠标拖拽旋转 | 滚轮缩放</div>
+            </div>
+            <div class="ui-area">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="indicator-dot"></span> 缓慢退火 (Slow Cooling)
+                    </div>
+                    <div id="state-slow" style="color: var(--accent-slow); font-weight: bold; font-size: 0.9rem;">LIQUID</div>
+                </div>
+
+                <div class="status-container">
+                    <div class="info-row">
+                        <span>Temperature</span>
+                        <span id="temp-slow" class="temp-val">1200 K</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="bar-slow" class="progress-bar" style="background: linear-gradient(90deg, #ff4400, #ffae00);"></div>
+                    </div>
+                    <div class="info-row" style="margin-top:8px">
+                        <span>目标结构: <span style="color:#fff">BCC 晶格</span></span>
+                        <span>有序度: <span id="order-slow" style="color:#fff">低</span></span>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" id="btn-start-slow">开始缓慢冷却</button>
+                    <button class="btn-action" id="btn-reset-slow">重置熔化</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧面板：快速急冷 -->
+        <div class="panel fast">
+            <div class="canvas-wrapper" id="container-fast">
+                <div class="overlay-label">鼠标拖拽旋转 | 滚轮缩放</div>
+            </div>
+            <div class="ui-area">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="indicator-dot"></span> 快速急冷 (Quenching)
+                    </div>
+                    <div id="state-fast" style="color: var(--accent-fast); font-weight: bold; font-size: 0.9rem;">LIQUID</div>
+                </div>
+
+                <div class="status-container">
+                    <div class="info-row">
+                        <span>Temperature</span>
+                        <span id="temp-fast" class="temp-val">1200 K</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="bar-fast" class="progress-bar" style="background: linear-gradient(90deg, #ff4400, #ffae00);"></div>
+                    </div>
+                    <div class="info-row" style="margin-top:8px">
+                        <span>目标结构: <span style="color:#fff">非晶态 (玻璃)</span></span>
+                        <span>有序度: <span id="order-fast" style="color:#fff">无</span></span>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" id="btn-start-fast">开始快速急冷</button>
+                    <button class="btn-action" id="btn-reset-fast">重置熔化</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        /**
+         * 3D 模拟引擎类
+         * 每个实例管理一个独立的 Canvas 和模拟逻辑
+         */
+        class SimulationInstance {
+            constructor(containerId, mode, uiIds) {
+                this.container = document.getElementById(containerId);
+                this.mode = mode; // 'slow' or 'fast'
+                this.ui = uiIds;
+                
+                // 状态变量
+                this.temperature = 1.0; // 0.0 - 1.0
+                this.isCooling = false;
+                this.particles = [];
+                
+                // 3D 场景初始化
+                this.initThreeJS();
+                this.initParticles();
+                
+                // 绑定按钮
+                document.getElementById(uiIds.btnStart).addEventListener('click', () => this.startCooling());
+                document.getElementById(uiIds.btnReset).addEventListener('click', () => this.reset());
+
+                // 启动循环
+                this.animate();
+            }
+
+            initThreeJS() {
+                const w = this.container.clientWidth;
+                const h = this.container.clientHeight;
+
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(this.mode === 'slow' ? 0x05101a : 0x1a050f);
+                this.scene.fog = new THREE.Fog(this.scene.background, 10, 50);
+
+                this.camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
+                this.camera.position.set(0, 0, 30);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+                this.renderer.setSize(w, h);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.container.appendChild(this.renderer.domElement);
+
+                this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+                this.controls.enableDamping = true;
+                this.controls.enablePan = false;
+                this.controls.maxDistance = 60;
+                this.controls.autoRotate = true;
+                this.controls.autoRotateSpeed = 1.0;
+
+                // 灯光
+                const ambLight = new THREE.AmbientLight(0xffffff, 0.4);
+                this.scene.add(ambLight);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+                dirLight.position.set(10, 20, 10);
+                this.scene.add(dirLight);
+
+                // 添加点光源模拟热发光效果
+                this.heatLight = new THREE.PointLight(0xffaa00, 0, 100);
+                this.scene.add(this.heatLight);
+
+                // 监听窗口大小变化
+                window.addEventListener('resize', () => {
+                   const newW = this.container.clientWidth;
+                   const newH = this.container.clientHeight;
+                   this.camera.aspect = newW / newH;
+                   this.camera.updateProjectionMatrix();
+                   this.renderer.setSize(newW, newH);
+                });
+            }
+
+            initParticles() {
+                const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+                const baseColor = this.mode === 'slow' ? 0x00d2ff : 0xff2a6d;
+                const material = new THREE.MeshStandardMaterial({
+                    color: baseColor,
+                    roughness: 0.2,
+                    metalness: 0.7,
+                    emissive: 0xff4400,
+                    emissiveIntensity: 0.5
+                });
+
+                // 生成晶格结构 (5x5x5)
+                const gridSize = 5;
+                const spacing = 2.2;
+                const offset = (gridSize - 1) * spacing / 2;
+
+                for (let x = 0; x < gridSize; x++) {
+                    for (let y = 0; y < gridSize; y++) {
+                        for (let z = 0; z < gridSize; z++) {
+                            // 1. 计算理想的晶格坐标 (Target Position)
+                            const tx = x * spacing - offset;
+                            const ty = y * spacing - offset;
+                            const tz = z * spacing - offset;
+
+                            // 2. 初始赋予随机位置 (Liquid State)
+                            const mesh = new THREE.Mesh(geometry, material.clone());
+                            mesh.position.set(
+                                (Math.random() - 0.5) * 15,
+                                (Math.random() - 0.5) * 15,
+                                (Math.random() - 0.5) * 15
+                            );
+                            
+                            this.scene.add(mesh);
+
+                            // 3. 存储粒子数据对象
+                            this.particles.push({
+                                mesh: mesh,
+                                targetPos: new THREE.Vector3(tx, ty, tz),
+                                velocity: new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize().multiplyScalar(0.2),
+                                frozenPos: null // 用于玻璃态冻结位置
+                            });
+                        }
+                    }
+                }
+            }
+
+            startCooling() {
+                if(this.temperature < 0.9) this.reset(); // 如果已经在冷却，先重置
+                this.isCooling = true;
+                this.controls.autoRotate = false; // 停止自动旋转方便观察
+            }
+
+            reset() {
+                this.temperature = 1.0;
+                this.isCooling = false;
+                this.controls.autoRotate = true;
+                // 重新赋予随机速度
+                this.particles.forEach(p => {
+                    p.velocity.set(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize().multiplyScalar(0.2);
+                    p.frozenPos = null;
+                });
+            }
+
+            updatePhysics() {
+                // 1. 控温逻辑
+                if (this.isCooling) {
+                    const rate = this.mode === 'slow' ? 0.003 : 0.02; // 关键差异：冷却速率
+                    this.temperature -= rate;
+                    if (this.temperature < 0) this.temperature = 0;
+                }
+
+                // 2. 粒子物理更新
+                this.particles.forEach(p => {
+                    const { mesh, targetPos, velocity } = p;
+                    
+                    // --- 视觉效果：温度越高，发光越红 ---
+                    mesh.material.emissiveIntensity = this.temperature * 1.5;
+                    
+                    // --- 物理逻辑 ---
+
+                    if (this.temperature > 0.4) {
+                        // === 液态 / 高温阶段 ===
+                        // 纯粹的布朗运动
+                        mesh.position.addScaledVector(velocity, this.temperature * 1.5);
+                        
+                        // 边界反弹 (软限制)
+                        if(mesh.position.length() > 8) {
+                            velocity.addScaledVector(mesh.position, -0.05); // 向心力
+                        }
+
+                        // 随机扰动速度方向
+                        velocity.x += (Math.random() - 0.5) * 0.1;
+                        velocity.y += (Math.random() - 0.5) * 0.1;
+                        velocity.z += (Math.random() - 0.5) * 0.1;
+                        velocity.normalize().multiplyScalar(0.2);
+
+                        // 实时记录位置，为玻璃化做准备
+                        if (!p.frozenPos) p.frozenPos = new THREE.Vector3();
+                        p.frozenPos.copy(mesh.position);
+
+                    } else {
+                        // === 凝固阶段 (Temp < 0.4) ===
+                        
+                        if (this.mode === 'slow') {
+                            // --- 缓慢冷却：晶体生长 ---
+                            // 核心算法：插值 (Lerp) 平滑滑向目标晶格
+                            // 温度越低，插值系数越大 (吸附越强)
+                            const attractionStrength = (0.4 - this.temperature) * 0.15; 
+                            
+                            // 这里是"平滑"的关键：不直接设置位置，而是逐渐接近
+                            mesh.position.lerp(targetPos, attractionStrength);
+                            
+                            // 即使在固体中，也有微小的热震动
+                            mesh.position.x += (Math.random() - 0.5) * 0.02 * this.temperature;
+                            mesh.position.y += (Math.random() - 0.5) * 0.02 * this.temperature;
+                            mesh.position.z += (Math.random() - 0.5) * 0.02 * this.temperature;
+
+                        } else {
+                            // --- 快速冷却：玻璃化 ---
+                            // 核心算法：原地冻结
+                            // 粒子试图停留在它最后一次还是"液体"时的位置 (frozenPos)
+                            // 没有任何向 targetPos 移动的力
+                            
+                            const freezeStrength = 0.2;
+                            mesh.position.lerp(p.frozenPos, freezeStrength);
+                            
+                            // 快速冷却仍然有一点点震动
+                            mesh.position.x += (Math.random() - 0.5) * 0.02 * this.temperature;
+                        }
+                    }
+                });
+            }
+
+            updateUI() {
+                const bar = document.getElementById(this.ui.bar);
+                const txt = document.getElementById(this.ui.txt);
+                const state = document.getElementById(this.ui.state);
+                const order = document.getElementById(this.ui.order);
+                const realTemp = Math.floor(this.temperature * 1000 + 200);
+
+                txt.innerText = realTemp + " K";
+                bar.style.width = (this.temperature * 100) + "%";
+
+                // 颜色变化
+                if (this.temperature > 0.4) {
+                    bar.style.background = `linear-gradient(90deg, #ff4400, #ffae00)`;
+                    state.innerText = "LIQUID (Melting)";
+                    state.style.color = "#ffae00";
+                    order.innerText = "混乱";
+                } else {
+                    const color = this.mode === 'slow' ? 'var(--accent-slow)' : 'var(--accent-fast)';
+                    bar.style.background = color;
+                    state.style.color = color;
+                    
+                    if (this.mode === 'slow') {
+                        state.innerText = this.temperature === 0 ? "SOLID (Crystal)" : "CRYSTALLIZING...";
+                        order.innerText = "高度有序";
+                    } else {
+                        state.innerText = this.temperature === 0 ? "SOLID (Glass)" : "VITRIFYING...";
+                        order.innerText = "无序 (冻结)";
+                    }
+                }
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.controls.update();
+                this.updatePhysics();
+                this.renderer.render(this.scene, this.camera);
+                this.updateUI();
+            }
+        }
+
+        // --- 初始化两个独立的实例 ---
+
+        // 1. 左侧：缓慢结晶
+        const simSlow = new SimulationInstance('container-slow', 'slow', {
+            btnStart: 'btn-start-slow',
+            btnReset: 'btn-reset-slow',
+            bar: 'bar-slow',
+            txt: 'temp-slow',
+            state: 'state-slow',
+            order: 'order-slow'
+        });
+
+        // 2. 右侧：快速玻璃化
+        const simFast = new SimulationInstance('container-fast', 'fast', {
+            btnStart: 'btn-start-fast',
+            btnReset: 'btn-reset-fast',
+            bar: 'bar-fast',
+            txt: 'temp-fast',
+            state: 'state-fast',
+            order: 'order-fast'
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>嘉兴一实化学学习平台 - 智慧实验室门户</title>
+    <style>
+        :root {
+            --primary-cyan: #00f2ff;
+            --accent-purple: #bc13fe;
+            --bg-dark: #050508;
+            --glass-bg: rgba(25, 25, 35, 0.85);
+            --card-border: rgba(0, 242, 255, 0.2);
+            --neon-shadow: 0 0 20px rgba(0, 242, 255, 0.15);
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+            background-color: var(--bg-dark);
+            color: white; overflow: hidden;
+        }
+
+        /* 粒子背景 */
+        #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; width: 100%; height: 100%; }
+
+        /* 主容器 */
+        #main-portal {
+            display: flex; flex-direction: column;
+            height: 100vh; padding: 40px 60px;
+            box-sizing: border-box; overflow-y: auto;
+            scrollbar-width: thin; scrollbar-color: var(--card-border) transparent;
+        }
+
+        #main-portal::-webkit-scrollbar { width: 6px; }
+        #main-portal::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 10px; }
+
+        header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 40px; border-bottom: 1px solid var(--card-border); padding-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .logo-title h1 {
+            margin: 0; font-size: 2.2rem; letter-spacing: 4px;
+            background: linear-gradient(90deg, #fff, var(--primary-cyan));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* 大类标题样式 */
+        .category-section { margin-bottom: 50px; }
+        .category-header {
+            display: flex; align-items: center; gap: 15px; margin-bottom: 25px;
+        }
+        .category-header h2 {
+            font-size: 1.4rem; color: var(--primary-cyan); margin: 0;
+            text-transform: uppercase; letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0,242,255,0.4);
+        }
+        .category-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--card-border), transparent); }
+
+        /* 网格布局 */
+        .module-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--glass-bg); border: 1px solid var(--card-border);
+            border-radius: 12px; padding: 20px; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; backdrop-filter: blur(15px);
+        }
+        .card:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+        }
+        .card-tag { font-size: 0.7rem; color: #888; margin-bottom: 8px; font-family: monospace; }
+        .card-title { font-size: 1.2rem; margin: 0 0 10px 0; color: #efefef; }
+        .card-desc { font-size: 0.85rem; color: #aaa; line-height: 1.5; margin-bottom: 15px; }
+        
+        /* 运行状态指示 */
+        .status { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--primary-cyan); }
+        .status-pulse {
+            width: 6px; height: 6px; background: var(--primary-cyan);
+            border-radius: 50%; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 
+            0% { box-shadow: 0 0 0 0 rgba(0,242,255,0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0,242,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(0,242,255,0); }
+        }
+
+        /* 全屏实验室 */
+        #lab-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1000; background: #000; display: none;
+        }
+        #lab-frame { width: 100%; height: 100%; border: none; }
+        .close-btn {
+            position: absolute; top: 20px; right: 30px; z-index: 1001;
+            background: rgba(255,255,255,0.1); border: 1px solid #fff; color: #fff;
+            padding: 8px 20px; border-radius: 4px; cursor: pointer; backdrop-filter: blur(5px);
+        }
+        .close-btn:hover { background: #ff4d4d; border-color: #ff4d4d; }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <main id="main-portal">
+        <header>
+            <div class="logo-title">
+                <p style="margin:0; color:var(--primary-cyan); font-size:0.8rem;">JIAXING FIRST SCHOOL</p>
+                <h1>嘉兴一实化学学习平台</h1>
+            </div>
+            <div style="text-align: right; font-family: monospace; font-size: 0.8rem; color: #555;">
+                CORE_ENGINE: V2.0.26<br>
+                STATUS: READY
+            </div>
+        </header>
+
+        <section class="category-section">
+            <div class="category-header">
+                <h2>01. 晶体结构解析</h2>
+                <div class="category-line"></div>
+            </div>
+            <div class="module-grid">
+                <div class="card" onclick="openLab('金刚石晶胞拆解.html')">
+                    <div class="card-tag">CRYSTAL LATTICE</div>
+                    <h3 class="card-title">金刚石晶胞拆解模型</h3>
+                    <p class="card-desc">探索金刚石的微观奥秘，清晰展示FCC骨架与四面体填隙原子的空间排布。</p>
+                    <div class="status"><div class="status-pulse"></div> 可交互 3D 视图</div>
+                </div>
+                </div>
+        </section>
+
+        <section class="category-section">
+            <div class="category-header">
+                <h2>02. 分子结构解析</h2>
+                <div class="category-line"></div>
+            </div>
+            <div class="module-grid">
+                <div class="card" onclick="openLab('诱导效应对分子电子云影响演示.html')">
+                    <div class="card-tag">ELECTRONIC EFFECT</div>
+                    <h3 class="card-title">诱导效应与电子云演示</h3>
+                    <p class="card-desc">通过 $pK_a$ 变化与电子云密度图，可视化理解取代基如何改变分子酸性。</p>
+                    <div class="status"><div class="status-pulse"></div> 电子云模拟引擎</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="category-section">
+            <div class="category-header">
+                <h2>03. 动力学模拟</h2>
+                <div class="category-line"></div>
+            </div>
+            <div class="module-grid">
+                <div class="card" onclick="openLab('结晶动力学演示.html')">
+                    <div class="card-tag">KINETIC SIMULATION</div>
+                    <h3 class="card-title">结晶与玻璃化模拟</h3>
+                    <p class="card-desc">实时模拟原子在不同冷却速率下的排列过程，对比晶体与非晶态的形成动力学。</p>
+                    <div class="status"><div class="status-pulse"></div> 实时物理引擎</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="category-section" style="opacity: 0.5;">
+            <div class="category-header">
+                <h2>04. 实验预留区</h2>
+                <div class="category-line"></div>
+            </div>
+            <div class="module-grid">
+                <div class="card" style="border-style: dashed; cursor: default;">
+                    <h3 class="card-title">待补充模型...</h3>
+                    <p class="card-desc">您可以点击代码中的此部分，继续添加后续的学习内容。</p>
+                </div>
+            </div>
+        </section>
+
+        <footer style="padding: 40px 0; text-align: center; color: #444; font-size: 0.8rem; border-top: 1px solid #111;">
+            视觉呈现由嘉兴一实化学组提供 &copy; 2026
+        </footer>
+    </main>
+
+    <div id="lab-overlay">
+        <button class="close-btn" onclick="closeLab()">退出实验室</button>
+        <iframe id="lab-frame"></iframe>
+    </div>
+
+    <script>
+        // 背景动画
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let dots = [];
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            dots = Array.from({length: 40}, () => ({
+                x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+                vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3
+            }));
+        }
+        function draw() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(0, 242, 255, 0.2)";
+            dots.forEach(d => {
+                d.x += d.vx; d.y += d.vy;
+                if(d.x<0 || d.x>canvas.width) d.vx *= -1;
+                if(d.y<0 || d.y>canvas.height) d.vy *= -1;
+                ctx.beginPath(); ctx.arc(d.x, d.y, 1.5, 0, Math.PI*2); ctx.fill();
+            });
+            requestAnimationFrame(draw);
+        }
+        window.onresize = init; init(); draw();
+
+        // 实验室开关
+        function openLab(url) {
+            document.getElementById('lab-frame').src = url;
+            document.getElementById('lab-overlay').style.display = 'block';
+        }
+        function closeLab() {
+            document.getElementById('lab-overlay').style.display = 'none';
+            document.getElementById('lab-frame').src = '';
+        }
+    </script>
+</body>
+</html>
