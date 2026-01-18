@@ -89,4 +89,152 @@
         @keyframes pulse { 
             0% { box-shadow: 0 0 0 0 rgba(0,242,255,0.7); }
             70% { box-shadow: 0 0 0 10px rgba(0,242,255,0); }
-            100% { box-shadow: 0 0
+            100% { box-shadow: 0 0 0 0 rgba(0,242,255,0); }
+        }
+
+        /* 全屏实验室 */
+        #lab-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1000; background: #000; display: none;
+        }
+        #lab-frame { width: 100%; height: 100%; border: none; }
+        .close-btn {
+            position: absolute; top: 20px; right: 30px; z-index: 1001;
+            background: rgba(255,255,255,0.1); border: 1px solid #fff; color: #fff;
+            padding: 8px 20px; border-radius: 4px; cursor: pointer; backdrop-filter: blur(5px);
+        }
+        .close-btn:hover { background: #ff4d4d; border-color: #ff4d4d; }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <main id="main-portal">
+        <header>
+            <div class="logo-title">
+                <p style="margin:0; color:var(--primary-cyan); font-size:0.8rem;">JIAXING FIRST SCHOOL</p>
+                <h1>嘉兴一实化学学习平台</h1>
+            </div>
+            <div style="text-align: right; font-family: monospace; font-size: 0.8rem; color: #555;">
+                CORE_ENGINE: V2.1.0<br>
+                STATUS: READY
+            </div>
+        </header>
+
+        <section class="category-section">
+            <div class="category-header">
+                <h2>01. 晶体结构解析</h2>
+                <div class="category-line"></div>
+            </div>
+            <div class="module-grid">
+                <div class="card" onclick="openLab('diamond.html')">
+                    <div class="card-tag">CRYSTAL LATTICE</div>
+                    <h3 class="card-title">金刚石晶胞拆解模型</h3>
+                    <p class="card-desc">探索金刚石的微观奥秘，清晰展示FCC骨架与四面体填隙原子的空间排布。</p>
+                    <div class="status"><div class="status-pulse"></div> 可交互 3D 视图</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="category-section">
+            <div class="category-header">
+                <h2>02. 分子结构解析</h2>
+                <div class="category-line"></div>
+            </div>
+            <div class="module-grid">
+                <div class="card" onclick="openLab('induction.html')">
+                    <div class="card-tag">ELECTRONIC EFFECT</div>
+                    <h3 class="card-title">诱导效应与电子云演示</h3>
+                    <p class="card-desc">可视化理解取代基如何改变分子酸性，对比乙酸与三氟乙酸的电子云。</p>
+                    <div class="status"><div class="status-pulse"></div> 电子云模拟引擎</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="category-section">
+            <div class="category-header">
+                <h2>03. 动力学模拟</h2>
+                <div class="category-line"></div>
+            </div>
+            <div class="module-grid">
+                <div class="card" onclick="openLab('kinetics.html')">
+                    <div class="card-tag">KINETIC SIMULATION</div>
+                    <h3 class="card-title">结晶与玻璃化模拟</h3>
+                    <p class="card-desc">实时模拟原子在不同冷却速率下的排列过程，对比晶体与非晶态。</p>
+                    <div class="status"><div class="status-pulse"></div> 实时物理引擎</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="category-section">
+            <div class="category-header">
+                <h2>04. 历年真题及解析</h2>
+                <div class="category-line"></div>
+            </div>
+            <div class="module-grid">
+                <div class="card" onclick="openLab('202506.html')">
+                    <div class="card-tag">EXAM REVIEW</div>
+                    <h3 class="card-title">2025年6月浙江化学选考</h3>
+                    <p class="card-desc">内置高清试卷与专家解析，支持一键切换查阅，安全阅览模式。</p>
+                    <div class="status"><div class="status-pulse"></div> 试卷阅览器</div>
+                </div>
+                <div class="card" style="border-style: dashed; opacity: 0.5; cursor: default;">
+                    <div class="card-tag">COMING SOON</div>
+                    <h3 class="card-title">更多真题整理中...</h3>
+                </div>
+            </div>
+        </section>
+
+        <footer style="padding: 40px 0; text-align: center; color: #444; font-size: 0.8rem; border-top: 1px solid #111;">
+            视觉呈现由嘉兴一实化学组提供 &copy; 2026
+        </footer>
+    </main>
+
+    <div id="lab-overlay">
+        <button class="close-btn" onclick="closeLab()">退出实验室</button>
+        <iframe id="lab-frame"></iframe>
+    </div>
+
+    <script>
+        // 背景动画
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let dots = [];
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            dots = Array.from({length: 40}, () => ({
+                x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+                vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3
+            }));
+        }
+        function draw() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(0, 242, 255, 0.2)";
+            dots.forEach(d => {
+                d.x += d.vx; d.y += d.vy;
+                if(d.x<0 || d.x>canvas.width) d.vx *= -1;
+                if(d.y<0 || d.y>canvas.height) d.vy *= -1;
+                ctx.beginPath(); ctx.arc(d.x, d.y, 1.5, 0, Math.PI*2); ctx.fill();
+            });
+            requestAnimationFrame(draw);
+        }
+        window.onresize = init; init(); draw();
+
+        // 实验室开关逻辑
+        function openLab(url) {
+            const frame = document.getElementById('lab-frame');
+            const overlay = document.getElementById('lab-overlay');
+            console.log("正在加载: " + url); // 方便调试
+            frame.src = url;
+            overlay.style.display = 'block';
+        }
+        function closeLab() {
+            document.getElementById('lab-overlay').style.display = 'none';
+            document.getElementById('lab-frame').src = '';
+        }
+    </script>
+</body>
+</html>
