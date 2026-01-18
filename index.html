@@ -129,13 +129,13 @@
                 <div class="category-line"></div>
             </div>
             <div class="module-grid">
-                <div class="card" onclick="openLab('金刚石晶胞拆解.html')">
+                <div class="card" onclick="openLab('diamond.html')">
                     <div class="card-tag">CRYSTAL LATTICE</div>
                     <h3 class="card-title">金刚石晶胞拆解模型</h3>
                     <p class="card-desc">探索金刚石的微观奥秘，清晰展示FCC骨架与四面体填隙原子的空间排布。</p>
                     <div class="status"><div class="status-pulse"></div> 可交互 3D 视图</div>
                 </div>
-                </div>
+            </div>
         </section>
 
         <section class="category-section">
@@ -144,10 +144,10 @@
                 <div class="category-line"></div>
             </div>
             <div class="module-grid">
-                <div class="card" onclick="openLab('诱导效应对分子电子云影响演示.html')">
+                <div class="card" onclick="openLab('induction.html')">
                     <div class="card-tag">ELECTRONIC EFFECT</div>
                     <h3 class="card-title">诱导效应与电子云演示</h3>
-                    <p class="card-desc">通过 $pK_a$ 变化与电子云密度图，可视化理解取代基如何改变分子酸性。</p>
+                    <p class="card-desc">可视化理解取代基如何改变分子酸性，对比乙酸与三氟乙酸的电子云。</p>
                     <div class="status"><div class="status-pulse"></div> 电子云模拟引擎</div>
                 </div>
             </div>
@@ -159,26 +159,28 @@
                 <div class="category-line"></div>
             </div>
             <div class="module-grid">
-                <div class="card" onclick="openLab('结晶动力学演示.html')">
+                <div class="card" onclick="openLab('kinetics.html')">
                     <div class="card-tag">KINETIC SIMULATION</div>
                     <h3 class="card-title">结晶与玻璃化模拟</h3>
-                    <p class="card-desc">实时模拟原子在不同冷却速率下的排列过程，对比晶体与非晶态的形成动力学。</p>
+                    <p class="card-desc">实时模拟原子在不同冷却速率下的排列过程，对比晶体与非晶态。</p>
                     <div class="status"><div class="status-pulse"></div> 实时物理引擎</div>
                 </div>
             </div>
         </section>
 
-        <section class="category-section" style="opacity: 0.5;">
+        <section class="category-section">
             <div class="category-header">
-                <h2>04. 实验预留区</h2>
+                <h2>04. 历年真题及解析</h2>
                 <div class="category-line"></div>
             </div>
             <div class="module-grid">
-                <div class="card" style="border-style: dashed; cursor: default;">
-                    <h3 class="card-title">待补充模型...</h3>
-                    <p class="card-desc">您可以点击代码中的此部分，继续添加后续的学习内容。</p>
+                <div class="card" onclick="openLab('202506.html')">
+                    <div class="card-tag">EXAM REVIEW</div>
+                    <h3 class="card-title">2025年6月浙江化学选考</h3>
+                    <p class="card-desc">提供原卷在线查看及详细专家解析切换，支持PDF高清阅读。</p>
+                    <div class="status"><div class="status-pulse"></div> PDF 交互视图</div>
                 </div>
-            </div>
+                </div>
         </section>
 
         <footer style="padding: 40px 0; text-align: center; color: #444; font-size: 0.8rem; border-top: 1px solid #111;">
@@ -219,8 +221,11 @@
 
         // 实验室开关
         function openLab(url) {
-            document.getElementById('lab-frame').src = url;
-            document.getElementById('lab-overlay').style.display = 'block';
+            const frame = document.getElementById('lab-frame');
+            const overlay = document.getElementById('lab-overlay');
+            console.log("正在尝试加载模块: " + url);
+            frame.src = url;
+            overlay.style.display = 'block';
         }
         function closeLab() {
             document.getElementById('lab-overlay').style.display = 'none';

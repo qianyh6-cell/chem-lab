@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025年6月浙江省化学选考 - 原卷查看</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        /* 顶部控制栏样式 */
+        .control-bar {
+            height: 60px;
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 10;
+        }
+
+        .title {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-exam {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-exam:hover, .btn-exam.active {
+            background-color: #2980b9;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.6);
+        }
+
+        .btn-answer {
+            background-color: #27ae60;
+            color: white;
+        }
+        .btn-answer:hover, .btn-answer.active {
+            background-color: #2ecc71;
+            box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+        }
+
+        /* PDF 显示区域样式 */
+        .pdf-container {
+            width: 100%;
+            height: calc(100% - 60px); /* 减去顶部高度 */
+            border: none;
+            background-color: #525659; /* 常见的PDF阅读器背景色 */
+        }
+
+        /* 提示信息 */
+        #error-msg {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="control-bar">
+        <div class="title" id="page-title">当前视图：化学试卷</div>
+        <div class="btn-group">
+            <button class="btn btn-exam active" onclick="switchPdf('exam')">📄 查看试卷</button>
+            <button class="btn btn-answer" onclick="switchPdf('answer')">📝 查看解析</button>
+        </div>
+    </div>
+
+    <div id="error-msg">
+        <h3>无法加载 PDF 文件</h3>
+        <p>请确保以下文件与本网页在<b>同一个文件夹</b>内：</p>
+        <ul style="text-align: left; color: #e74c3c;">
+            <li>202506化学试卷.pdf</li>
+            <li>2025年6月浙江省普通高校招生选考科目考试解析.pdf</li>
+        </ul>
+    </div>
+
+    <iframe id="pdf-viewer" class="pdf-container" src="" type="application/pdf"></iframe>
+
+    <script>
+        // 定义文件名（必须与您本地的文件名完全一致）
+        const files = {
+            exam: '202506化学试卷.pdf',
+            answer: '2025年6月浙江省普通高校招生选考科目考试解析.pdf'
+        };
+
+        const viewer = document.getElementById('pdf-viewer');
+        const title = document.getElementById('page-title');
+        const errorMsg = document.getElementById('error-msg');
+        const btnExam = document.querySelector('.btn-exam');
+        const btnAnswer = document.querySelector('.btn-answer');
+
+        // 初始化：默认加载试卷
+        window.onload = function() {
+            switchPdf('exam');
+        };
+
+        function switchPdf(type) {
+            const fileName = files[type];
+            
+            // 切换按钮状态
+            if (type === 'exam') {
+                btnExam.classList.add('active');
+                btnAnswer.classList.remove('active');
+                title.innerText = "当前视图：化学试卷 (原卷)";
+            } else {
+                btnExam.classList.remove('active');
+                btnAnswer.classList.add('active');
+                title.innerText = "当前视图：答案与解析 (原卷)";
+            }
+
+            // 尝试加载PDF
+            // 注意：某些浏览器如果找不到文件不会报错，而是显示空白或浏览器自带的404页面
+            viewer.src = fileName;
+            
+            // 简单的错误检查 (无法完全捕获本地文件错误，但在服务器环境下有效)
+            viewer.onerror = function() {
+                viewer.style.display = 'none';
+                errorMsg.style.display = 'block';
+            };
+        }
+    </script>
+</body>
+</html>
