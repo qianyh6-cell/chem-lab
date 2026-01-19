@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教材原理图析</title>
+    <style>
+        body {
+            margin: 0; padding: 30px;
+            background-color: #1a1a1d;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            overflow-y: auto;
+        }
+        
+        /* 隐藏滚动条但保留功能 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1d; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00f2ff;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+
+        .diagram-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+
+        .diagram-card:hover {
+            border-color: #00f2ff;
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            color: #ddd;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #00f2ff;
+        }
+
+        /* 图片容器，确保图片自适应 */
+        .img-wrapper {
+            width: 100%;
+            background: #fff; /* 白色背景衬托图片 */
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.3s;
+            cursor: zoom-in;
+        }
+
+        /* 简单的悬停放大效果 */
+        img:hover {
+            transform: scale(1.02);
+        }
+
+        .note {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #888;
+            line-height: 1.6;
+        }
+
+        .highlight { color: #00f2ff; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>教材重点原理图析</h1>
+
+        <div class="diagram-card">
+            <div class="card-title">01. 牺牲阳极保护法与加速腐蚀对比</div>
+            <div class="img-wrapper">
+                <img src="corrosion.png" alt="电化学腐蚀原理">
+            </div>
+            <div class="note">
+                <p><strong>图解要点：</strong></p>
+                <ul>
+                    <li>左图（保护）：锌(Zn)比铁活泼，作为<span class="highlight">负极</span>被腐蚀，铁作为正极受到保护（牺牲阳极法）。</li>
+                    <li>右图（加速）：铁(Fe)比铜活泼，铁作为<span class="highlight">负极</span>加速失去电子，生成 Fe²⁺，遇铁氰化钾显蓝色。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="diagram-card">
+            <div class="card-title">02. 锂离子电池工作原理 (放电过程)</div>
+            <div class="img-wrapper">
+                <img src="battery.png" alt="锂离子电池原理">
+            </div>
+            <div class="note">
+                <p><strong>图解要点：</strong></p>
+                <ul>
+                    <li><strong>电子流向：</strong>由负极经外电路流向正极。</li>
+                    <li><strong>锂离子(Li⁺)流向：</strong>在电解液中由负极向正极移动，通过隔膜。</li>
+                    <li><strong>负极反应：</strong>石墨中的锂脱嵌，氧化反应。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

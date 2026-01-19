@@ -21,10 +21,8 @@
             color: white; overflow: hidden;
         }
 
-        /* 粒子背景 */
         #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; width: 100%; height: 100%; }
 
-        /* 主容器 */
         #main-portal {
             display: flex; flex-direction: column;
             height: 100vh; padding: 40px 60px;
@@ -47,7 +45,6 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* 大类标题样式 */
         .category-section { margin-bottom: 50px; }
         .category-header {
             display: flex; align-items: center; gap: 15px; margin-bottom: 25px;
@@ -59,12 +56,10 @@
         }
         .category-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--card-border), transparent); }
 
-        /* 网格布局 */
         .module-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px;
         }
 
-        /* 卡片样式 */
         .card {
             background: var(--glass-bg); border: 1px solid var(--card-border);
             border-radius: 12px; padding: 20px; cursor: pointer;
@@ -80,7 +75,6 @@
         .card-title { font-size: 1.2rem; margin: 0 0 10px 0; color: #efefef; }
         .card-desc { font-size: 0.85rem; color: #aaa; line-height: 1.5; margin-bottom: 15px; }
         
-        /* 运行状态指示 */
         .status { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--primary-cyan); }
         .status-pulse {
             width: 6px; height: 6px; background: var(--primary-cyan);
@@ -92,7 +86,6 @@
             100% { box-shadow: 0 0 0 0 rgba(0,242,255,0); }
         }
 
-        /* 全屏实验室 */
         #lab-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1000; background: #000; display: none;
@@ -118,14 +111,29 @@
                 <h1>嘉兴一实化学学习平台</h1>
             </div>
             <div style="text-align: right; font-family: monospace; font-size: 0.8rem; color: #555;">
-                CORE_ENGINE: V2.1.0<br>
+                CORE_ENGINE: V2.2.0<br>
                 STATUS: READY
             </div>
         </header>
 
         <section class="category-section">
             <div class="category-header">
-                <h2>01. 晶体结构解析</h2>
+                <h2>01. 教材原理图析</h2>
+                <div class="category-line"></div>
+            </div>
+            <div class="module-grid">
+                <div class="card" onclick="openLab('principles.html')">
+                    <div class="card-tag">TEXTBOOK DIAGRAMS</div>
+                    <h3 class="card-title">教材重点原理详解</h3>
+                    <p class="card-desc">包含电化学腐蚀对比、锂离子电池工作原理等高清图示与解析。</p>
+                    <div class="status"><div class="status-pulse"></div> 静态高清图解</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="category-section">
+            <div class="category-header">
+                <h2>02. 晶体结构解析</h2>
                 <div class="category-line"></div>
             </div>
             <div class="module-grid">
@@ -140,7 +148,7 @@
 
         <section class="category-section">
             <div class="category-header">
-                <h2>02. 分子结构解析</h2>
+                <h2>03. 分子结构解析</h2>
                 <div class="category-line"></div>
             </div>
             <div class="module-grid">
@@ -155,7 +163,7 @@
 
         <section class="category-section">
             <div class="category-header">
-                <h2>03. 动力学模拟</h2>
+                <h2>04. 动力学模拟</h2>
                 <div class="category-line"></div>
             </div>
             <div class="module-grid">
@@ -170,7 +178,7 @@
 
         <section class="category-section">
             <div class="category-header">
-                <h2>04. 历年真题及解析</h2>
+                <h2>05. 历年真题及解析</h2>
                 <div class="category-line"></div>
             </div>
             <div class="module-grid">
@@ -179,10 +187,6 @@
                     <h3 class="card-title">2025年6月浙江化学选考</h3>
                     <p class="card-desc">内置高清试卷与专家解析，支持一键切换查阅，安全阅览模式。</p>
                     <div class="status"><div class="status-pulse"></div> 试卷阅览器</div>
-                </div>
-                <div class="card" style="border-style: dashed; opacity: 0.5; cursor: default;">
-                    <div class="card-tag">COMING SOON</div>
-                    <h3 class="card-title">更多真题整理中...</h3>
                 </div>
             </div>
         </section>
@@ -223,11 +227,10 @@
         }
         window.onresize = init; init(); draw();
 
-        // 实验室开关逻辑
         function openLab(url) {
             const frame = document.getElementById('lab-frame');
             const overlay = document.getElementById('lab-overlay');
-            console.log("正在加载: " + url); // 方便调试
+            console.log("正在加载: " + url);
             frame.src = url;
             overlay.style.display = 'block';
         }
